@@ -27,7 +27,7 @@ header-includes:
 #### Load necessary packages ####
 # * These packages are not necessary to complete the assignment and or only used 
 #   to provide an example. 
-packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere")
+packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere", "dplyr")
 
 install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(install_me)) install.packages(install_me)
@@ -37,6 +37,7 @@ library(kableExtra)
 library(magrittr)
 library(readr)
 library(geosphere)
+library(dplyr)
 ```
 
 ## Background
@@ -59,35 +60,181 @@ Date fields are stored in MM/DD/YYYY format.
 
 ### Objective 1
 ```{r ob1}
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE)
+recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
 
+cat("Confired Dataset")
+head(select(arrange(confirmed_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+cat("Deaths Dataset")
+head(select(arrange(deaths_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+cat("Recovered Dataset")
+head(select(arrange(recovered_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
 ```
+
+Based on the data above, Hubei, China is the most likely origion of the virus.  This is based on Hubei, China having by far the most confirmed cases and is the only region with any recoveries or deaths on the first day of data avaliable.  Also, all other regions that have confirmed cases are regions that are near Hubei.
 
 ### Objective 2
 ```{r ob2}
-
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 & 
+                                  confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
+head(select(recent_ds, Province.State, Country.Region, X3.25.20, X3.26.20))
 ```
+
+As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases.
 
 ### Objective 3
 ```{r ob3}
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 & 
+                                  confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
+origin_ds<-arrange(confirmed_ds, -X1.22.20)[1,]
 
+# Compute distances from origin
+distances<-distm(select(recent_ds, Long, Lat), select(origin_ds, Long, Lat))
+# Convert from m to miles
+distances<-distances * 0.00062137
+
+# Add distance from origin to dataframe and sort by distance
+recent_ds$distance<-distances[,1]
+recent_ds<-arrange(recent_ds, distance)
+
+# Vector is small enough that loop is reasonable
+for (i in 1:nrow(recent_ds)) {
+  city<-recent_ds[i, "Province.State"]
+  
+  # If there is no city use country
+  if (city == "") {
+    city<-recent_ds[i, "Country.Region"]
+  }
+  
+  cat(city, "is", recent_ds[i, "distance"], "miles away from", 
+      paste0(origin_ds[1, "Province.State"], ","), 
+      paste0(origin_ds[1, "Country.Region"], "."), "\n")
+}
 ```
 
 ### Objective 4
 
 #### Objective 4.1
 ```{r ob4.1}
+# Datasets respresent a cumlative sum by date, so last column represents 
+# sumation for region
+confirmed_ds<-select(read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                     Country.Region, X3.26.20)
+names(confirmed_ds)[3] <- "confirmed"
+deaths_ds<-select(read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                  Country.Region, X3.26.20)
+names(deaths_ds)[3] <- "deaths"
+recovered_ds<-select(read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                     Country.Region, X3.26.20)
+names(recovered_ds)[3] <- "recovered"
 
+# Combine the datasets into one and fill NA with 0
+combined_ds<-full_join(confirmed_ds, recovered_ds, 
+                       by=c("Province.State", "Country.Region"))
+combined_ds<-full_join(combined_ds, deaths_ds, 
+                       by=c("Province.State", "Country.Region"))
+combined_ds[is.na(combined_ds)] <- 0
+
+# Assignment is unclear if we are to consider state and region or 
+# just region. Based on how data is formatted, I think it is cleaner 
+# and makes more sence to use region only.  For instance, in confirmed 
+# dataset, Canada is broken up by region, but in recovered dataset it 
+# uses Canada as a whole.  There are numerous examples of this in
+# the data
+grouped_ds<-as.data.frame(summarise_each(group_by(
+  select(combined_ds, -Province.State), Country.Region), sum))
+
+# compute risk and burden by region
+grouped_ds$risk<-grouped_ds$deaths / grouped_ds$recovered
+grouped_ds$burden<-grouped_ds$confirmed * grouped_ds$risk
+
+cat("Highest risk scores")
+head(arrange(grouped_ds, -risk, -confirmed))
+cat("Highest risk scores, that are not infinite")
+head(arrange(grouped_ds[grouped_ds$risk != Inf,], -risk, -confirmed))
+cat("Lowest Risk Scores")
+head(arrange(grouped_ds, risk, confirmed))
+cat("Lowest risk scores, that are not zero")
+head(arrange(grouped_ds[grouped_ds$risk != 0,], risk, confirmed))
+
+global_confirmed<-sum(grouped_ds$confirmed)
+global_deaths<-sum(grouped_ds$deaths)
+global_recovered<-sum(grouped_ds$recovered)
+global_risk<-global_deaths / global_recovered
+global_burden<-global_confirmed * global_risk
+
+cat("Global Data\n", 
+    "Confirmed:", global_confirmed, 
+    "Deaths:", global_deaths, 
+    "Recovered:", global_recovered, "\n",
+    "Risk:", global_risk, "Burden:", global_burden, "\n")
 ```
+
+Based on how the equation is written, any region which has had at least one person recover and no deaths will have a risk score of zero.  Some examples of this are Nepal, Namibia and the Bahamas.  When filtering out risk scores of 0, the regions of lowest risk include Singapore, Diamond Princess and Bahrain.  Any region that has no recoveries and yet at least one death will have infinite risk.  Examples of this are Serbia, Mauritius and Kosovo.  If filtering out regions that have infinite risk, we see that the Netherlands, Brazil and Ecuador have the highest risk.  When looking at the global score of risk of 0.196, it seems like the risk is high in that almost 20% of the people that have recovered have died.  This value seems especially high when looking at regions like Singapore which have a risk score of only 0.012, but when compared to the Netherlands where the risk is 72.5, the global risk seems less significant.  This wide range in risk numbers indicate that while the risk in some regions is extremely high, yet globally, for the most part, the risk is rather low.
+
+Risk assessments like this are important because they are good indicators of where danger is located or help is needed that can be used across many industries.  For example, the travel industry may wish to impose bans on travelling to and from locations of high risk.  The medical field can use these values to determine locations that are in the most need for medical support.  Research fields may also use this data to help identify trends.  For example, if a region has a high amount of recoveries and almost no deaths, i.e. low risk score, it may be worth looking into what kind of treatment they are using in that region and if it could be used in other locations throughout the world. The thing to be careful though is that risk scores may be a little misleading.  For instance, several regions have almost no cases, but one death and no recoveries causing a massive risk score.  Even though these regions have pretty much no cases they are still seen as extremely risky.  This is why it could be benficial to filter out the extremes before considering the data as valid.
 
 #### Objective 4.2
 ```{r ob4.2}
+# Datasets respresent a cumlative sum by date, so last column represents 
+# sumation for region
+confirmed_ds<-select(read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                     Country.Region, X3.26.20)
+names(confirmed_ds)[3] <- "confirmed"
+deaths_ds<-select(read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                  Country.Region, X3.26.20)
+names(deaths_ds)[3] <- "deaths"
+recovered_ds<-select(read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+                     Country.Region, X3.26.20)
+names(recovered_ds)[3] <- "recovered"
 
+# Combine the datasets into one and fill NA with 0
+combined_ds<-full_join(confirmed_ds, recovered_ds, 
+                       by=c("Province.State", "Country.Region"))
+combined_ds<-full_join(combined_ds, deaths_ds, 
+                       by=c("Province.State", "Country.Region"))
+combined_ds[is.na(combined_ds)] <- 0
+
+# Group and combine data by region
+grouped_ds<-as.data.frame(summarise_each(group_by(
+  select(combined_ds, -Province.State), Country.Region), sum))
+
+# compute risk and burden by region
+grouped_ds$risk<-grouped_ds$deaths / grouped_ds$recovered
+grouped_ds$burden<-grouped_ds$confirmed * grouped_ds$risk
+
+confirmed_tb = kable(arrange(grouped_ds, -confirmed)[1:5,])
+deaths_tb = kable(arrange(grouped_ds, -deaths)[1:5,])
+recovered_tb = kable(arrange(grouped_ds, -recovered)[1:5,])
+
+cat("Top 5 confirmed regions")
+confirmed_tb
+cat("Top 5 deaths regions")
+deaths_tb
+cat("Top 5 recovered regions")
+recovered_tb
 ```
 
 ### GitHub Log
-```{bash gitlog} 
-git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
-```
+#```{bash gitlog} 
+# Can't get this to work :'(
+# Probably need to install something
+#git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
+#```
 
 
 
