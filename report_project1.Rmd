@@ -67,26 +67,39 @@ deaths_ds<-read.csv("time_series_covid19_deaths_global.csv",
 recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 
-cat("Confired Dataset")
+cat("Confirmed Dataset")
 head(select(arrange(confirmed_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
 cat("Deaths Dataset")
 head(select(arrange(deaths_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
 cat("Recovered Dataset")
 head(select(arrange(recovered_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+
+#Proving origin using conditional statement
+confirmed_ordered<-head(select(arrange(confirmed_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+death_ordered<-head(select(arrange(deaths_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+recovered_ordered<-head(select(arrange(recovered_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+if(confirmed_ordered[1,1]==death_ordered[1,1] && confirmed_ordered[1,1]==recovered_ordered[1,1] && death_ordered[1,1]==recovered_ordered[1,1])
+{
+  print(confirmed_ordered[1,1])
+}
 ```
 
-Based on the data above, Hubei, China is the most likely origion of the virus.  This is based on Hubei, China having by far the most confirmed cases and is the only region with any recoveries or deaths on the first day of data avaliable.  Also, all other regions that have confirmed cases are regions that are near Hubei.
+Based on the data above, Hubei, China is the most likely origin of the virus.  This is based on Hubei, China having by far the most confirmed cases and is the only region with any recoveries or deaths on the first day of data avaliable.  Also, all other regions that have confirmed cases on the first day are regions that are near Hubei. The conditional statement also proves that Hubei is the most likely origin of the virus because it shows that the place with the most deaths, recovered, and confirmed cases on the first day is Hubei.
 
 ### Objective 2
 ```{r ob2}
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
-recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 & 
-                                  confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
-head(select(recent_ds, Province.State, Country.Region, X3.25.20, X3.26.20))
+#recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 
+#& confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
+num_columns<-ncol(confirmed_ds)
+recent_ds<-arrange(confirmed_ds[confirmed_ds[,num_columns-1] == 0 
+                                & confirmed_ds[,num_columns] > 0,], -X3.26.20)
+#head(select(recent_ds, Province.State, Country.Region, X3.25.20, X3.26.20))
+head(select(recent_ds, Province.State, Country.Region, ncol(confirmed_ds)-1, ncol(confirmed_ds)))
 ```
 
-As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases.
+As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases. We found this by going through the data and selecting the countries that did not have cases before March 26th and had their first cases on March 26th.Our code can be used for an updated version of the confirmed cases file, but our report was written with March 26th as the last date of data.
 
 ### Objective 3
 ```{r ob3}
