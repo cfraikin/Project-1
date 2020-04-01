@@ -90,23 +90,25 @@ Based on the data above, Hubei, China is the most likely origin of the virus.  T
 ```{r ob2}
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
-#recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 
-#& confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
-num_columns<-ncol(confirmed_ds)
-recent_ds<-arrange(confirmed_ds[confirmed_ds[,num_columns-1] == 0 
-                                & confirmed_ds[,num_columns] > 0,], -X3.26.20)
-#head(select(recent_ds, Province.State, Country.Region, X3.25.20, X3.26.20))
+recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1] == 0 
+                                & confirmed_ds[,ncol(confirmed_ds)] > 0,]) 
 head(select(recent_ds, Province.State, Country.Region, ncol(confirmed_ds)-1, ncol(confirmed_ds)))
+
+for(i in 1:nrow(recent_ds))
+{
+  cat(recent_ds[i,1], recent_ds[i,2], "is the most recent area to have their first confirmed case \n")
+}
+
 ```
 
-As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases. We found this by going through the data and selecting the countries that did not have cases before March 26th and had their first cases on March 26th.Our code can be used for an updated version of the confirmed cases file, but our report was written with March 26th as the last date of data.
+!!This needs to be updated when we turn it in: As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases. We found this by going through the data and selecting the countries that did not have cases before March 26th and had their first cases on March 26th.Our code can be used for an updated version of the confirmed cases file, but our report was written with March 26th as the last date of data.
 
 ### Objective 3
 ```{r ob3}
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
-recent_ds<-arrange(confirmed_ds[confirmed_ds$X3.25.20 == 0 & 
-                                  confirmed_ds$X3.26.20 > 0, ], -X3.26.20)
+recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1] == 0 
+                                & confirmed_ds[,ncol(confirmed_ds)] > 0,]) 
 origin_ds<-arrange(confirmed_ds, -X1.22.20)[1,]
 
 # Compute distances from origin
@@ -194,9 +196,9 @@ cat("Global Data\n",
     "Risk:", global_risk, "Burden:", global_burden, "\n")
 ```
 
-Based on how the equation is written, any region which has had at least one person recover and no deaths will have a risk score of zero.  Some examples of this are Nepal, Namibia and the Bahamas.  When filtering out risk scores of 0, the regions of lowest risk include Singapore, Diamond Princess and Bahrain.  Any region that has no recoveries and yet at least one death will have infinite risk.  Examples of this are Serbia, Mauritius and Kosovo.  If filtering out regions that have infinite risk, we see that the Netherlands, Brazil and Ecuador have the highest risk.  When looking at the global score of risk of 0.196, it seems like the risk is high in that almost 20% of the people that have recovered have died.  This value seems especially high when looking at regions like Singapore which have a risk score of only 0.012, but when compared to the Netherlands where the risk is 72.5, the global risk seems less significant.  This wide range in risk numbers indicate that while the risk in some regions is extremely high, yet globally, for the most part, the risk is rather low.
+Based on how the equation is written, any region which has had at least one person recover and no deaths will have a risk score of zero.  Some examples of this are Nepal, Namibia and the Bahamas.  When filtering out risk scores of 0, the regions of lowest risk include Singapore, Diamond Princess and Bahrain.  Any region that has no recoveries and yet at least one death will have infinite risk.  Examples of this are Serbia, Mauritius and Kosovo.  If filtering out regions that have infinite risk, we see that the Netherlands, Brazil and Ecuador have the highest risk.  When looking at the global score of risk of 0.196, it seems like the risk is high in that almost 20% of the people that have recovered have died.  This value seems especially high when looking at regions like Singapore which have a risk score of only 0.012, but when compared to the Netherlands where the risk is 72.5, the global risk seems less significant.  This wide range in risk numbers indicates that while the risk in some regions is extremely high, for the most part, the risk is rather low globally.
 
-Risk assessments like this are important because they are good indicators of where danger is located or help is needed that can be used across many industries.  For example, the travel industry may wish to impose bans on travelling to and from locations of high risk.  The medical field can use these values to determine locations that are in the most need for medical support.  Research fields may also use this data to help identify trends.  For example, if a region has a high amount of recoveries and almost no deaths, i.e. low risk score, it may be worth looking into what kind of treatment they are using in that region and if it could be used in other locations throughout the world. The thing to be careful though is that risk scores may be a little misleading.  For instance, several regions have almost no cases, but one death and no recoveries causing a massive risk score.  Even though these regions have pretty much no cases they are still seen as extremely risky.  This is why it could be benficial to filter out the extremes before considering the data as valid.
+Risk assessments like this are important because they are good indicators of where danger is located or help is needed that can be used across many industries.  For example, the travel industry may wish to impose bans on travelling to and from locations of high risk.  The medical field can use these values to determine locations that are in the most need for medical support.  Research fields may also use this data to help identify trends.  For example, if a region has a high amount of recoveries and almost no deaths, i.e. low risk score, it may be worth looking into what kind of treatment they are using in that region and if it could be used in other locations throughout the world. The thing to be careful though is that risk scores may be a little misleading.  For instance, several regions have almost no cases, but one death and no recoveries causing a massive risk score.  Even though these regions have pretty much no cases, they are still seen as extremely risky.  This is why it could be beneficial to filter out the extremes before considering the data as valid.
 
 #### Objective 4.2
 ```{r ob4.2}
@@ -204,15 +206,15 @@ Risk assessments like this are important because they are good indicators of whe
 # sumation for region
 confirmed_ds<-select(read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                     Country.Region, X3.26.20)
+                     Country.Region, ncol(confirmed_ds))
 names(confirmed_ds)[3] <- "confirmed"
 deaths_ds<-select(read.csv("time_series_covid19_deaths_global.csv", 
                     header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                  Country.Region, X3.26.20)
+                  Country.Region, ncol(deaths_ds))
 names(deaths_ds)[3] <- "deaths"
 recovered_ds<-select(read.csv("time_series_covid19_recovered_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                     Country.Region, X3.26.20)
+                     Country.Region, ncol(recovered_ds))
 names(recovered_ds)[3] <- "recovered"
 
 # Combine the datasets into one and fill NA with 0
@@ -243,13 +245,13 @@ recovered_tb
 ```
 
 ### GitHub Log
-#```{bash gitlog} 
+```{bash gitlog} 
+
+git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
+```
+
 # Can't get this to work :'(
 # Probably need to install something
-#git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
-#```
-
-
 
 
 
