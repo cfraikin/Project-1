@@ -67,49 +67,98 @@ deaths_ds<-read.csv("time_series_covid19_deaths_global.csv",
 recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 
-cat("Confirmed Dataset")
-head(select(arrange(confirmed_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
-cat("Deaths Dataset")
-head(select(arrange(deaths_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
-cat("Recovered Dataset")
-head(select(arrange(recovered_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
+confirmed_ordered<-select(arrange(confirmed_ds, -X1.22.20), 
+                          Province.State, Country.Region, X1.22.20)
+death_ordered<-select(arrange(deaths_ds, -X1.22.20), 
+                      Province.State, Country.Region, X1.22.20)
+recovered_ordered<-select(arrange(recovered_ds, -X1.22.20), 
+                          Province.State, Country.Region, X1.22.20)
 
-#Proving origin using conditional statement
-confirmed_ordered<-head(select(arrange(confirmed_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
-death_ordered<-head(select(arrange(deaths_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
-recovered_ordered<-head(select(arrange(recovered_ds, -X1.22.20), Province.State, Country.Region, X1.22.20))
-if(confirmed_ordered[1,1]==death_ordered[1,1] && confirmed_ordered[1,1]==recovered_ordered[1,1] && death_ordered[1,1]==recovered_ordered[1,1])
+cat("Confirmed Dataset")
+head(confirmed_ordered)
+cat("Deaths Dataset")
+head(death_ordered)
+cat("Recovered Dataset")
+head(recovered_ordered)
+
+cat(confirmed_ordered[1,1], ", ", confirmed_ordered[1,2], 
+    " has the most confirmed cases on the first day. \n", 
+    death_ordered[1,1], ", ", death_ordered[1,2], 
+    " has the most deaths from the virus on the first day. \n",
+    recovered_ordered[1,1], ", ", recovered_ordered[1,2], 
+    " has the most recovered cases from the virus on the first day. \n", 
+    sep="")
+
+
+if (confirmed_ordered[1,1] == death_ordered[1,1] && 
+    confirmed_ordered[1,1] == recovered_ordered[1,1] && 
+    death_ordered[1,1] == recovered_ordered[1,1])
 {
-  print(confirmed_ordered[1,1])
+  cat(confirmed_ordered[1,1], ", ", confirmed_ordered[1,2], 
+    " is the most likely origin of the virus. \n", sep="")
 }
 ```
 
-Based on the data above, Hubei, China is the most likely origin of the virus.  This is based on Hubei, China having by far the most confirmed cases and is the only region with any recoveries or deaths on the first day of data avaliable.  Also, all other regions that have confirmed cases on the first day are regions that are near Hubei. The conditional statement also proves that Hubei is the most likely origin of the virus because it shows that the place with the most deaths, recovered, and confirmed cases on the first day is Hubei.
+Based on the data above: Hubei, China is the most likely origin of the virus.  This is based on Hubei, China having by far the most confirmed cases and is the only region with any recoveries or deaths on the first day of data avaliable.  Also, all other regions that have confirmed cases on the first day are regions that are near Hubei. The conditional statement also proves that Hubei is the most likely origin of the virus because it shows that the place with the most deaths, recovered, and confirmed cases on the first day is Hubei.
 
 ### Objective 2
 ```{r ob2}
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1] == 0 
-                                & confirmed_ds[,ncol(confirmed_ds)] > 0,]) 
-head(select(recent_ds, Province.State, Country.Region, ncol(confirmed_ds)-1, ncol(confirmed_ds)))
+                                & confirmed_ds[,ncol(confirmed_ds)] > 0,])
 
+i<-0
+# If there are no new cases today loop back to find most recent region
+# to have new cases
+if (nrow(recent_ds) == 0) {
+  while (nrow(recent_ds) == 0) {
+    i<-i+1
+    recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1-i] == 0 
+                                & confirmed_ds[,ncol(confirmed_ds)-i] > 0,])
+  }
+}
+
+head(select(recent_ds, Province.State, Country.Region, ncol(confirmed_ds)-1-i, 
+            ncol(confirmed_ds)-i))
+
+# Vector is small enough that loop is reasonable
 for(i in 1:nrow(recent_ds))
 {
-  cat(recent_ds[i,1], recent_ds[i,2], "is the most recent area to have their first confirmed case \n")
+  if (recent_ds[i,1] == "") {
+    cat(recent_ds[i,2], "has recently had their first confirmed case. \n")
+  } else {
+    if (recent_ds[i,2] == "") {
+      cat(recent_ds[i,1], "has recently had their first confirmed case. \n")
+    } else {
+      cat(recent_ds[i,1], ", ", recent_ds[i,2], 
+          " has recently had their first confirmed case. \n", sep="")
+    }
+  }
 }
 
 ```
 
-!!This needs to be updated when we turn it in: As of 3/26, Kosovo, Yukon, Canada and Northwest Territories, Canada are the most recent areas to have their first confirmed cases. We found this by going through the data and selecting the countries that did not have cases before March 26th and had their first cases on March 26th.Our code can be used for an updated version of the confirmed cases file, but our report was written with March 26th as the last date of data.
+Most recent territories were found by going through the data and selecting the countries that did not have cases before yesterday and had their first cases today.  If there are no regions meeting this check, then each previous day is looked at until there are regions found with new cases.
 
 ### Objective 3
 ```{r ob3}
+origin_ds<-arrange(confirmed_ds, -X1.22.20)[1,]
 confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
                        header=TRUE, stringsAsFactors=FALSE)
 recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1] == 0 
-                                & confirmed_ds[,ncol(confirmed_ds)] > 0,]) 
-origin_ds<-arrange(confirmed_ds, -X1.22.20)[1,]
+                                & confirmed_ds[,ncol(confirmed_ds)] > 0,])
+
+i<-0
+# If there are no new cases today loop back to find most recent region
+# to have new cases
+if (nrow(recent_ds) == 0) {
+  while (nrow(recent_ds) == 0) {
+    i<-i+1
+    recent_ds<-arrange(confirmed_ds[confirmed_ds[,ncol(confirmed_ds)-1-i] == 0 
+                                & confirmed_ds[,ncol(confirmed_ds)-i] > 0,])
+  }
+}
 
 # Compute distances from origin
 distances<-distm(select(recent_ds, Long, Lat), select(origin_ds, Long, Lat))
@@ -120,6 +169,8 @@ distances<-distances * 0.00062137
 recent_ds$distance<-distances[,1]
 recent_ds<-arrange(recent_ds, distance)
 
+head(select(recent_ds, Province.State, Country.Region, Lat, Long, distance))
+
 # Vector is small enough that loop is reasonable
 for (i in 1:nrow(recent_ds)) {
   city<-recent_ds[i, "Province.State"]
@@ -129,10 +180,12 @@ for (i in 1:nrow(recent_ds)) {
     city<-recent_ds[i, "Country.Region"]
   }
   
-  cat(city, "is", recent_ds[i, "distance"], "miles away from", 
+  cat(city, "is", recent_ds[i, "distance"], 
+      "miles away from the virus origin in", 
       paste0(origin_ds[1, "Province.State"], ","), 
       paste0(origin_ds[1, "Country.Region"], "."), "\n")
 }
+
 ```
 
 ### Objective 4
@@ -141,17 +194,20 @@ for (i in 1:nrow(recent_ds)) {
 ```{r ob4.1}
 # Datasets respresent a cumlative sum by date, so last column represents 
 # sumation for region
-confirmed_ds<-select(read.csv("time_series_covid19_confirmed_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                     Country.Region, X3.26.20)
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+confirmed_ds<-select(confirmed_ds, Province.State, 
+                     Country.Region, ncol(confirmed_ds))
 names(confirmed_ds)[3] <- "confirmed"
-deaths_ds<-select(read.csv("time_series_covid19_deaths_global.csv", 
-                    header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                  Country.Region, X3.26.20)
+deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE)
+deaths_ds<-select(deaths_ds, Province.State, 
+                  Country.Region, ncol(deaths_ds))
 names(deaths_ds)[3] <- "deaths"
-recovered_ds<-select(read.csv("time_series_covid19_recovered_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
-                     Country.Region, X3.26.20)
+recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+recovered_ds<-select(recovered_ds, Province.State, 
+                     Country.Region, ncol(recovered_ds))
 names(recovered_ds)[3] <- "recovered"
 
 # Combine the datasets into one and fill NA with 0
@@ -190,13 +246,15 @@ global_risk<-global_deaths / global_recovered
 global_burden<-global_confirmed * global_risk
 
 cat("Global Data\n", 
-    "Confirmed:", global_confirmed, 
-    "Deaths:", global_deaths, 
+    "Confirmed:", global_confirmed, "\n", 
+    "Deaths:   ", global_deaths, "\n",
     "Recovered:", global_recovered, "\n",
-    "Risk:", global_risk, "Burden:", global_burden, "\n")
+    "Risk:     ", global_risk, "\n",
+    "Burden:   ", global_burden, "\n")
+
 ```
 
-Based on how the equation is written, any region which has had at least one person recover and no deaths will have a risk score of zero.  Some examples of this are Nepal, Namibia and the Bahamas.  When filtering out risk scores of 0, the regions of lowest risk include Singapore, Diamond Princess and Bahrain.  Any region that has no recoveries and yet at least one death will have infinite risk.  Examples of this are Serbia, Mauritius and Kosovo.  If filtering out regions that have infinite risk, we see that the Netherlands, Brazil and Ecuador have the highest risk.  When looking at the global score of risk of 0.196, it seems like the risk is high in that almost 20% of the people that have recovered have died.  This value seems especially high when looking at regions like Singapore which have a risk score of only 0.012, but when compared to the Netherlands where the risk is 72.5, the global risk seems less significant.  This wide range in risk numbers indicates that while the risk in some regions is extremely high, for the most part, the risk is rather low globally.
+Based on how the equation is written, any region which has had at least one person recover and no deaths will have a risk score of zero.  Examples of this can be seen in the "Lowest Risk Scores" table above.  When filtering out risk scores of 0, the regions of lowest risk can be seen in "Lowest risk scores, that are not zero" table above.  Any region that has no recoveries and yet at least one death will have infinite risk.  Examples of this can be seen in the "Highest risk scores" table above.  If filtering out regions that have infinite risk, we see that the regions in the "Highest risk scores, that are not infinite" table above.  When looking at the global score, it seems like the risk is high when considering it represents the people that have recovered versus those who have died.  This value seems especially high when looking at the regions in the "Lowest risk scores, that are not zero" table, but when compared to the "Highest risk scores, that are not infinite" table where the risk scores are extremely high, the global risk seems less significant.  This wide range in risk numbers indicates that while the risk in some regions is extremely high, for the most part, the risk is rather low globally.
 
 Risk assessments like this are important because they are good indicators of where danger is located or help is needed that can be used across many industries.  For example, the travel industry may wish to impose bans on travelling to and from locations of high risk.  The medical field can use these values to determine locations that are in the most need for medical support.  Research fields may also use this data to help identify trends.  For example, if a region has a high amount of recoveries and almost no deaths, i.e. low risk score, it may be worth looking into what kind of treatment they are using in that region and if it could be used in other locations throughout the world. The thing to be careful though is that risk scores may be a little misleading.  For instance, several regions have almost no cases, but one death and no recoveries causing a massive risk score.  Even though these regions have pretty much no cases, they are still seen as extremely risky.  This is why it could be beneficial to filter out the extremes before considering the data as valid.
 
@@ -204,16 +262,19 @@ Risk assessments like this are important because they are good indicators of whe
 ```{r ob4.2}
 # Datasets respresent a cumlative sum by date, so last column represents 
 # sumation for region
-confirmed_ds<-select(read.csv("time_series_covid19_confirmed_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+confirmed_ds<-read.csv("time_series_covid19_confirmed_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+confirmed_ds<-select(confirmed_ds, Province.State, 
                      Country.Region, ncol(confirmed_ds))
 names(confirmed_ds)[3] <- "confirmed"
-deaths_ds<-select(read.csv("time_series_covid19_deaths_global.csv", 
-                    header=TRUE, stringsAsFactors=FALSE), Province.State, 
+deaths_ds<-read.csv("time_series_covid19_deaths_global.csv", 
+                    header=TRUE, stringsAsFactors=FALSE)
+deaths_ds<-select(deaths_ds, Province.State, 
                   Country.Region, ncol(deaths_ds))
 names(deaths_ds)[3] <- "deaths"
-recovered_ds<-select(read.csv("time_series_covid19_recovered_global.csv", 
-                       header=TRUE, stringsAsFactors=FALSE), Province.State, 
+recovered_ds<-read.csv("time_series_covid19_recovered_global.csv", 
+                       header=TRUE, stringsAsFactors=FALSE)
+recovered_ds<-select(recovered_ds, Province.State, 
                      Country.Region, ncol(recovered_ds))
 names(recovered_ds)[3] <- "recovered"
 
@@ -242,16 +303,13 @@ cat("Top 5 deaths regions")
 deaths_tb
 cat("Top 5 recovered regions")
 recovered_tb
+
 ```
 
 ### GitHub Log
-```{bash gitlog} 
-
-git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
-```
-
-# Can't get this to work :'(
-# Probably need to install something
+#```{bash gitlog} 
+#git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
+#```
 
 
 
