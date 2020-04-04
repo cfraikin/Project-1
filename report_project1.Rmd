@@ -311,5 +311,44 @@ recovered_tb
 #git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
 #```
 
+Could not get the above script to work correctly on my system.  This is the output from running the above script directly from the command line:
 
+Subject: Updated responses to be more generic and automatic such that they are created based on data pulled automatically from the table.  Fixed typos and minor bugs.  
+Author: 007Stylex007 (Benjamin Kelly)  
+Date: Fri, 3 Apr 2020 17:56:46 -0700  
+Body:  
 
+Subject: Revised the solutions  
+Author: Chanel Fraikin  
+Date: Wed, 1 Apr 2020 15:23:30 -0700  
+Body:  
+
+Subject: Adding to the initial responses  
+Author: Chanel Fraikin  
+Date: Tue, 31 Mar 2020 14:18:57 -0700  
+Body:  
+
+Subject: Initial attempt at questions 1-4, adding pdf preview of markdown output report  
+Author: 007Stylex007 (Benjamin Kelly)  
+Date: Mon, 30 Mar 2020 15:12:27 -0700  
+Body:  
+
+Subject: Adding confirmed cases dataset and project template  
+Author: 007Stylex007 (Benjamin Kelly)  
+Date: Fri, 27 Mar 2020 14:15:56 -0700  
+Body:  
+
+Subject: Downloaded data  
+Author: Chanel Fraikin  
+Date: Fri, 27 Mar 2020 13:22:52 -0700  
+Body:  
+
+Subject: Update README.md  
+Author: cfraikin  
+Date: Fri, 27 Mar 2020 13:06:39 -0700  
+Body: Added names to the README file  
+
+Subject: Initial commit  
+Author: cfraikin  
+Date: Fri, 27 Mar 2020 12:59:06 -0700  
+Body:  
